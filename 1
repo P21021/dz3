@@ -1,0 +1,226 @@
+//main.cpp
+
+#include <iostream>
+#include "String.h"
+
+int main()
+{
+	/*String s1 = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \
+		"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \
+		"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
+
+	String s2;
+
+	String s3 = "qweqewqwe";*/
+
+	{
+		//std::cin>> s1;
+		//std::cout<< s2;
+		String fixedStr;
+		String Str2 = "dinamyc string";
+
+		std::cout << "Total Str Objects : "  << String::GetRefrences() << std::endl;
+
+		{
+			String s3 = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \
+				"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
+
+			fixedStr = s3;
+
+			s3 += Str2;
+			std::cout << s3 << std::endl;
+
+			std::cout << "Total Str Objects : " << String::GetRefrences() << std::endl;
+		}
+
+		std::cout << Str2 << std::endl;
+		std::cout << fixedStr << std::endl;
+
+		std::cout << "Total Str Objects : " << String::GetRefrences() << std::endl;
+	}
+
+	std::cout << "Total Str Objects : " << String::GetRefrences() << std::endl;
+
+	return EXIT_SUCCESS;
+
+}
+
+String.h
+
+#pragma once
+
+#include <stdint.h>
+#include <iostream>
+
+
+class String
+{
+public:
+	String();					
+	String(const char* cstr);	
+	String(const String& cpy);	
+
+	void operator=(const String& rval);		
+	void operator=(const char* rval);		
+
+	void operator+=(const String& rval);	
+	void operator+=(const char* rval);		
+
+	String operator+(const String& rval);	
+	String operator+(const char* rval);		
+
+	friend std::ostream& operator<<(std::ostream& ostream, const String& str);	
+	friend std::istream& operator>>(std::istream& istream,  String& str);		
+
+	~String();
+public:
+	static uint64_t GetRefrences();	
+private:
+	char* _str;
+	size_t _length;
+	bool _fixed;
+};
+
+
+
+String.cpp
+
+#define _CRT_SECURE_NO_WARNINGS
+
+#include "String.h"
+#include <string>
+
+static const size_t MAX_LENGTH = 80;	
+static uint64_t refs = 0;				
+
+static inline uint64_t min(uint64_t x, uint64_t x2)
+{
+	return (x2 < x ? x2 : x);
+}
+
+String::String()
+	: _str(nullptr), _length(MAX_LENGTH), _fixed(true)
+{
+	_str = new char[MAX_LENGTH + 1];	
+	_str[0] = '\0';						
+
+	refs++;
+}
+
+
+String::String(const char* cstr)
+	: _fixed(false)
+{
+	_length = strlen(cstr);
+	_str = new char[_length + 1];
+	strcpy(_str, cstr);
+	refs++;
+}
+
+String::String(const String& cpy)
+	: _fixed(false)
+{
+	_length = cpy._length;
+	_str = new char[_length + 1];
+	strcpy(_str, cpy._str);
+	refs++;
+}
+
+void String::operator=(const String& rval)
+{
+	
+	if (_str != nullptr && _fixed == false)
+		delete _str;
+
+	if (_fixed)
+	{
+		strncpy(_str, rval._str, min(rval._length, _length));	
+		_str[_length] = '\0';
+	}
+	else
+	{
+		
+		_str = new char[rval._length + 1];
+		_length = rval._length;
+		strcpy(_str, rval._str);
+	}
+}
+
+
+void String::operator=(const char* rval)
+{
+	
+	*this = String(rval);
+}
+
+String String::operator+(const String& rval)
+{
+	
+	char* nbuffer = new char[_length + rval._length + 1];
+	nbuffer[0] = '\0';
+	
+	strcat(nbuffer, _str);
+	strcat(nbuffer, rval._str);
+
+	String tmp(nbuffer);
+	delete[] nbuffer;
+
+	return tmp;
+}
+
+String String::operator+(const char* rval)
+{
+	
+	char* nbuffer = new char[_length + strlen(rval) + 1];
+	nbuffer[0] = '\0';
+	
+	strcat(nbuffer, _str);
+	strcat(nbuffer, rval);
+
+	String tmp(nbuffer);
+	delete[] nbuffer;
+
+	return tmp;
+}
+
+void String::operator+=(const String& rval)
+{
+	*this = *this + rval;
+}
+
+void String::operator+=(const char *rval)
+{
+	*this = *this + rval;
+}
+
+std::ostream& operator<<(std::ostream& ostream, const String& str)
+{
+	if (str._str == nullptr)
+		ostream << ' ';
+	else 
+		ostream << str._str;
+
+	return ostream;
+}
+
+std::istream& operator>>(std::istream& istream, String& str)
+{
+	char buffer[256];
+	istream.getline(buffer, 256);
+	str = buffer;
+
+	return istream;
+}
+
+uint64_t String::GetRefrences()
+{
+	return refs;
+}
+
+String::~String()
+{
+	if (_str != nullptr)
+		delete[] _str;
+
+	refs--;
+}
